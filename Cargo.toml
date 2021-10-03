@@ -1,0 +1,25 @@
+[package]
+name = "gff"
+version = "0.1.0"
+authors = ["Marcin Kurczych <krcz@krcz.eu>"]
+description = "Library for working with non-prime finite fields"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/krcz/gff"
+edition = "2018"
+
+[dependencies]
+
+ff = { version = "0.11", features = ["derive"] }
+gff_derive = { version = "0.1", path = "gff_derive", optional = true }
+
+[dev-dependencies]
+proptest = "1.0.0"
+
+[features]
+
+derive = ["gff_derive"]
+
+[[test]]
+name = "derive"
+required-features = ["derive"]

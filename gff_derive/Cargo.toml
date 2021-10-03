@@ -1,0 +1,22 @@
+[package]
+name = "gff_derive"
+version = "0.1.0"
+authors = ["Marcin Kurczych <krcz@krcz.eu>"]
+description = "Procedural macros to generate non-prime finite field implementations"
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/krcz/gff"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+
+ff = { version = "0.11" }
+proc-macro2 = "1"
+quote = "1"
+syn = "1"
+regex = "1"
