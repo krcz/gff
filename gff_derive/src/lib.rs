@@ -3,6 +3,7 @@ extern crate proc_macro2;
 
 use quote::quote;
 use regex::Regex;
+use std::iter;
 
 fn fetch_attr(name: &str, attrs: &[syn::Attribute]) -> Option<syn::Lit> {
     for attr in attrs {
@@ -160,6 +161,9 @@ fn large_prime_extension_field_impl(
     let double_degree_minus_one = 2 * degree - 1;
 
     let min_poly_repr = quote! { [#(#fp_name([#min_poly])),*] };
+    let zero_poly_repr = quote! { [#fp_name::zero(); #degree] };
+    let one_poly_repr_elements = iter::repeat(quote! { #fp_name::zero() }).take(degree - 1);
+    let one_poly_repr = quote! { [#fp_name::one(), #(#one_poly_repr_elements),*] };
 
     quote! {
         const M: usize = #degree;
@@ -191,6 +195,15 @@ fn large_prime_extension_field_impl(
         }
 
         impl #name {
+
+            fn zero() -> Self {
+                #name(#zero_poly_repr)
+            }
+
+            fn one() -> Self {
+                #name(#one_poly_repr)
+            }
+
             #[inline]
             fn reduce(p: &mut [#fp_name; #double_degree_minus_one]) {
                 for i in (M .. (2 * M - 1)).rev() {

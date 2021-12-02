@@ -39,6 +39,12 @@ proptest! {
     }
 
     #[test]
+    fn zero_is_additive_identity(ref a in any_gf()) {
+        assert_eq!(a.clone() + GF::zero(), a.clone());
+        assert_eq!(GF::zero() + a.clone(), a.clone());
+    }
+
+    #[test]
     fn addition_commutative(ref a in any_gf(), ref b in any_gf()) {
         assert_eq!(a.clone() + b.clone(), b.clone() + a.clone());
     }
@@ -56,6 +62,18 @@ proptest! {
     #[test]
     fn subtraction_is_negation_addition(ref a in any_gf(), ref b in any_gf()) {
         assert_eq!(&(a.clone() - b), &(a.clone() + (-b.clone())));
+    }
+
+    #[test]
+    fn zero_is_multiplicative_annihilator(ref a in any_gf()) {
+        assert_eq!(a.clone() * GF::zero(), GF::zero());
+        assert_eq!(GF::zero() * a.clone(), GF::zero());
+    }
+
+    #[test]
+    fn one_is_multiplicative_identity(ref a in any_gf()) {
+        assert_eq!(a.clone() * GF::one(), a.clone());
+        assert_eq!(GF::one() * a.clone(), a.clone());
     }
 
     #[test]
