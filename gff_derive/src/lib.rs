@@ -178,6 +178,7 @@ fn large_prime_extension_field_impl(
     let one_poly_repr = quote! { [#fp_name::one(), #(#one_poly_repr_elements),*] };
 
     let prime_modulus_u32_digits = prime_field_modulus.to_u32_digits();
+    let random_fp_array = vec![quote!{#fp_name::random(&mut rng)}; degree];
 
     quote! {
 
@@ -221,6 +222,10 @@ fn large_prime_extension_field_impl(
 
             fn one() -> Self {
                 #name(#one_poly_repr)
+            }
+
+            fn random(mut rng: impl ::gff::derive::rand_core::RngCore) -> Self {
+                #name([#(#random_fp_array),*])
             }
 
             fn square(mut self) -> #name {

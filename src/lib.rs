@@ -8,7 +8,7 @@ use ff::Field;
 #[cfg(feature = "derive")]
 #[cfg_attr(docsrs, doc(cfg(feature = "derive")))]
 pub mod derive {
-    pub use num_bigint;
+    pub use {rand_core, num_bigint};
 }
 
 pub trait GenericFiniteField: Field {
