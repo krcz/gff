@@ -20,3 +20,5 @@ proc-macro2 = "1"
 quote = "1"
 syn = "1"
 regex = "1"
+
+num-bigint = "0.4"

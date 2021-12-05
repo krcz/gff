@@ -12,6 +12,7 @@ edition = "2018"
 
 ff = { version = "0.11", features = ["derive"] }
 gff_derive = { version = "0.1", path = "gff_derive", optional = true }
+num-bigint = "0.4"
 
 [dev-dependencies]
 proptest = "1.0.0"

@@ -4,6 +4,8 @@ extern crate proc_macro2;
 use quote::quote;
 use regex::Regex;
 use std::iter;
+use core::str::FromStr;
+use num_bigint::BigUint;
 
 fn fetch_attr(name: &str, attrs: &[syn::Attribute]) -> Option<syn::Lit> {
     for attr in attrs {
@@ -74,7 +76,7 @@ fn parse_monic_polynomial(v: &str, m: usize) -> Vec<u64> {
 /// Derive the `LargePrimeExtensionField` trait
 #[proc_macro_derive(
     LargePrimeExtensionField,
-    attributes(ExtensionDegree, MinimalPolynomial)
+    attributes(ExtensionDegree, MinimalPolynomial, PrimeFieldModulus)
 )]
 pub fn large_prime_extension_field(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     // Parse the type definition
@@ -87,8 +89,17 @@ pub fn large_prime_extension_field(input: proc_macro::TokenStream) -> proc_macro
         _ => panic!("ExtensionDegree must be a number"),
     };
 
+    let prime_modulus_str: String = match fetch_attr("PrimeFieldModulus", &ast.attrs)
+        .expect("Please supply a PrimeFieldModulus attribute")
+    {
+        syn::Lit::Str(ref s) => s.value(),
+        _ => panic!("PrimeFieldModulus must be a string"),
+    };
+
+    let prime_field_modulus = BigUint::from_str(&prime_modulus_str).expect("Couldn't parse PrimeFieldModulus");
+
     let min_poly_str: String = match fetch_attr("MinimalPolynomial", &ast.attrs)
-        .expect("Pleas supply a MinimalPolynomial attribute")
+        .expect("Please supply a MinimalPolynomial attribute")
     {
         syn::Lit::Str(ref s) => s.value(),
         _ => panic!("MinimalPolynomial must be a string"),
@@ -146,7 +157,7 @@ pub fn large_prime_extension_field(input: proc_macro::TokenStream) -> proc_macro
     let mut gen = proc_macro2::TokenStream::new();
 
     gen.extend(large_prime_extension_field_impl(
-        &ast.ident, &fp_name, degree, min_poly,
+        &ast.ident, &fp_name, degree, &prime_field_modulus, min_poly,
     ));
 
     gen.into()
@@ -156,6 +167,7 @@ fn large_prime_extension_field_impl(
     name: &syn::Ident,
     fp_name: &syn::Ident,
     degree: usize,
+    prime_field_modulus: &BigUint,
     min_poly: Vec<u64>,
 ) -> proc_macro2::TokenStream {
     let double_degree_minus_one = 2 * degree - 1;
@@ -165,10 +177,17 @@ fn large_prime_extension_field_impl(
     let one_poly_repr_elements = iter::repeat(quote! { #fp_name::zero() }).take(degree - 1);
     let one_poly_repr = quote! { [#fp_name::one(), #(#one_poly_repr_elements),*] };
 
+    let prime_modulus_u32_digits = prime_field_modulus.to_u32_digits();
+
     quote! {
+
         const M: usize = #degree;
 
         const MIN_POLY: [#fp_name; #degree] = #min_poly_repr;
+
+        fn PRIME_FIELD_MODULUS() -> ::gff::derive::num_bigint::BigUint {
+            ::gff::derive::num_bigint::BigUint::new(vec![#(#prime_modulus_u32_digits),*])
+        } 
 
         impl ::core::marker::Copy for #name { }
 
@@ -202,6 +221,42 @@ fn large_prime_extension_field_impl(
 
             fn one() -> Self {
                 #name(#one_poly_repr)
+            }
+
+            fn square(mut self) -> #name {
+                let mut res: [#fp_name; #double_degree_minus_one] = [#fp_name::zero(); #double_degree_minus_one];
+                for i in 0..M {
+                    res[2 * i] += self.0[i].square();
+
+                    for j in (i + 1)..M {
+                        res[i + j] += (self.0[i] * self.0[j]).double()
+                    }
+                }
+                Self::reduce(&mut res);
+                for i in 0..M {
+                    self.0[i] = res[i];
+                }
+                self
+            }
+
+            fn powx(mut self, e: ::gff::derive::num_bigint::BigUint) -> Self {
+                let mut acc = Self::one();
+                for i in 0..e.bits() {
+                    if e.bit(i) {
+                        acc = acc * self;
+                    }
+                    self = self.square();
+                }
+                self = acc;
+                self
+            }
+
+            fn frobenius(mut self, s: u64) -> #name {
+                self.powx(PRIME_FIELD_MODULUS().pow((s % (M as u64)) as u32))
+            }
+
+            fn invert(mut self) -> #name {
+                self.powx(PRIME_FIELD_MODULUS().pow(M as u32) - 2u8)
             }
 
             #[inline]

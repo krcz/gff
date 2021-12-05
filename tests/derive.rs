@@ -5,6 +5,7 @@ extern crate ff;
 extern crate gff;
 
 use ::ff::Field;
+use gff::GenericFiniteField;
 use proptest::prelude::*;
 use std::convert::TryInto;
 
@@ -15,6 +16,7 @@ use std::convert::TryInto;
 struct Fp([u64; 1]);
 
 #[derive(LargePrimeExtensionField)]
+#[PrimeFieldModulus = "65537"]
 #[ExtensionDegree = 4]
 #[MinimalPolynomial = "x^4 + 7 x^2 + 48035 x + 3"]
 struct GF([Fp; 4]);
@@ -89,6 +91,28 @@ proptest! {
     #[test]
     fn square_of_negation(ref a in any_gf()) {
         let na = -a.clone();
-        assert_eq!(na.clone() * na.clone(), a.clone() * a.clone());
+        assert_eq!(na.clone().square(), a.clone().square());
+    }
+
+    #[test]
+    fn square_is_multiplication_by_self(ref a in any_gf()) {
+        assert_eq!(a.clone().square(), a.clone() * a.clone());
+    }
+
+    #[test]
+    fn element_times_inverse_is_one(ref a in any_gf()) {
+        if a != &GF::zero() {
+            assert_eq!(a.clone() * a.clone().invert(), GF::one());
+        }
+    }
+
+    #[test]
+    fn frobenius_is_additive(ref a in any_gf(), ref b in any_gf()) {
+        assert_eq!(a.clone().frobenius(1) + b.clone().frobenius(1), (*a + b).frobenius(1));
+    }
+
+    #[test]
+    fn frobenius_is_multiplicative(ref a in any_gf(), ref b in any_gf()) {
+        assert_eq!(a.clone().frobenius(1) * b.clone().frobenius(1), (*a * b).frobenius(1));
     }
 }
