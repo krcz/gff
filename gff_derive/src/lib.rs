@@ -355,5 +355,41 @@ fn large_prime_extension_field_impl(
                 self * &other
             }
         }
+
+        impl ::core::ops::AddAssign for #name {
+            fn add_assign(&mut self, rhs: Self) {
+                *self = *self + rhs;
+            }
+        }
+
+        impl ::core::ops::SubAssign for #name {
+            fn sub_assign(&mut self, rhs: Self) {
+                *self = *self - rhs;
+            }
+        }
+
+        impl ::core::ops::MulAssign for #name {
+            fn mul_assign(&mut self, rhs: Self) {
+                *self = *self * rhs;
+            }
+        }
+
+        impl<'a> ::core::ops::AddAssign<&'a Self> for #name {
+            fn add_assign(&mut self, rhs: &'a Self) {
+                *self = *self + rhs;
+            }
+        }
+
+        impl<'a> ::core::ops::SubAssign<&'a Self> for #name {
+            fn sub_assign(&mut self, rhs: &'a Self) {
+                *self = *self - rhs;
+            }
+        }
+
+        impl<'a> ::core::ops::MulAssign<&'a Self> for #name {
+            fn mul_assign(&mut self, rhs: &'a Self) {
+                *self = *self * rhs;
+            }
+        }
     }
 }

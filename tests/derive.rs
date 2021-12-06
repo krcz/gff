@@ -115,4 +115,46 @@ proptest! {
     fn frobenius_is_multiplicative(ref a in any_gf(), ref b in any_gf()) {
         assert_eq!(a.clone().frobenius(1) * b.clone().frobenius(1), (*a * b).frobenius(1));
     }
+
+    #[test]
+    fn all_additions_equal(ref a in any_gf(), ref b in any_gf()) {
+        let r1 = a.clone() + b.clone();
+        let r2 = a.clone() + b;
+        let mut r3 = a.clone();
+        r3 += b.clone();
+        let mut r4 = a.clone();
+        r4 += b;
+
+        assert_eq!(r2, r1);
+        assert_eq!(r3, r1);
+        assert_eq!(r4, r1);
+    }
+
+    #[test]
+    fn all_subtractions_equal(ref a in any_gf(), ref b in any_gf()) {
+        let r1 = a.clone() - b.clone();
+        let r2 = a.clone() - b;
+        let mut r3 = a.clone();
+        r3 -= b.clone();
+        let mut r4 = a.clone();
+        r4 -= b;
+
+        assert_eq!(r2, r1);
+        assert_eq!(r3, r1);
+        assert_eq!(r4, r1);
+    }
+
+    #[test]
+    fn all_multiplications_equal(ref a in any_gf(), ref b in any_gf()) {
+        let r1 = a.clone() * b.clone();
+        let r2 = a.clone() * b;
+        let mut r3 = a.clone();
+        r3 *= b.clone();
+        let mut r4 = a.clone();
+        r4 *= b;
+
+        assert_eq!(r2, r1);
+        assert_eq!(r3, r1);
+        assert_eq!(r4, r1);
+    }
 }
