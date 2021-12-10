@@ -8,12 +8,16 @@
 
 v0.1:
 
-* implement full `Field` trait from `ff` crate
-* Frobenius morphism implementation
+* implement full `Field` trait from `ff` crate (done)
+* Frobenius morphism implementation (done)
 * polynomial basis only
+* sqrt implementation
+* polishing the code
 
 Further versions:
 
+* faster Frobenius morphism using precomputation
+* optimal extension fields (for fast Frobenius morphism and multiplication)
 * normal bases (including optimal normal bases)
 * use `u64` as underlying representation instead of `ff`-derived structs for small primes
 
