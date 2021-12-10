@@ -102,7 +102,7 @@ proptest! {
     #[test]
     fn element_times_inverse_is_one(ref a in any_gf()) {
         if a != &GF::zero() {
-            assert_eq!(a.clone() * a.clone().invert(), GF::one());
+            assert_eq!(a.clone() * a.clone().invert().unwrap(), GF::one());
         }
     }
 

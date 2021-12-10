@@ -182,6 +182,8 @@ fn large_prime_extension_field_impl(
 
     quote! {
 
+        use ::gff::derive::subtle::ConditionallySelectable;
+
         const M: usize = #degree;
 
         const MIN_POLY: [#fp_name; #degree] = #min_poly_repr;
@@ -214,36 +216,33 @@ fn large_prime_extension_field_impl(
             }
         }
 
+        impl Default for #name {
+            fn default() -> Self {
+                #name::zero()
+            }
+        }
+
+        impl ::gff::derive::subtle::ConditionallySelectable for #name {
+            fn conditional_select(a: &Self, b: &Self, choice: ::gff::derive::subtle::Choice) -> Self {
+                let mut arr = [#fp_name::default(); #degree];
+                for i in 0..#degree {
+                    arr[i] = #fp_name::conditional_select(&a.0[i], &b.0[i], choice);
+                }
+                #name(arr)
+            }
+        }
+
+        impl ::gff::derive::subtle::ConstantTimeEq for #name {
+            fn ct_eq(&self, other: &Self) -> ::gff::derive::subtle::Choice {
+                let mut acc = self.0[0].ct_eq(&other.0[0]);
+                for i in 1..#degree {
+                    acc &= self.0[i].ct_eq(&other.0[i]);
+                }
+                acc
+            }
+        }
+
         impl #name {
-
-            fn zero() -> Self {
-                #name(#zero_poly_repr)
-            }
-
-            fn one() -> Self {
-                #name(#one_poly_repr)
-            }
-
-            fn random(mut rng: impl ::gff::derive::rand_core::RngCore) -> Self {
-                #name([#(#random_fp_array),*])
-            }
-
-            fn square(mut self) -> #name {
-                let mut res: [#fp_name; #double_degree_minus_one] = [#fp_name::zero(); #double_degree_minus_one];
-                for i in 0..M {
-                    res[2 * i] += self.0[i].square();
-
-                    for j in (i + 1)..M {
-                        res[i + j] += (self.0[i] * self.0[j]).double()
-                    }
-                }
-                Self::reduce(&mut res);
-                for i in 0..M {
-                    self.0[i] = res[i];
-                }
-                self
-            }
-
             fn powx(mut self, e: ::gff::derive::num_bigint::BigUint) -> Self {
                 let mut acc = Self::one();
                 for i in 0..e.bits() {
@@ -256,14 +255,6 @@ fn large_prime_extension_field_impl(
                 self
             }
 
-            fn frobenius(mut self, s: u64) -> #name {
-                self.powx(PRIME_FIELD_MODULUS().pow((s % (M as u64)) as u32))
-            }
-
-            fn invert(mut self) -> #name {
-                self.powx(PRIME_FIELD_MODULUS().pow(M as u32) - 2u8)
-            }
-
             #[inline]
             fn reduce(p: &mut [#fp_name; #double_degree_minus_one]) {
                 for i in (M .. (2 * M - 1)).rev() {
@@ -272,6 +263,61 @@ fn large_prime_extension_field_impl(
                     }
                     p[i] = #fp_name::zero();
                 }
+            }
+
+        }
+
+        impl gff::GenericFiniteField for #name {
+            fn frobenius(mut self, s: u64) -> #name {
+                self.powx(PRIME_FIELD_MODULUS().pow((s % (M as u64)) as u32))
+            }
+        }
+
+        impl ff::Field for #name {
+            fn zero() -> Self {
+                #name(#zero_poly_repr)
+            }
+
+            fn one() -> Self {
+                #name(#one_poly_repr)
+            }
+
+            fn random(mut rng: impl ::gff::derive::rand_core::RngCore) -> Self {
+                #name([#(#random_fp_array),*])
+            }
+
+            fn double(&self) -> #name {
+                let mut arr = [#fp_name::default(); #degree];
+                for i in 0..#degree {
+                    arr[i] = self.0[i].double();
+                }
+                #name(arr)
+            }
+
+            fn square(&self) -> #name {
+                let mut res: [#fp_name; #double_degree_minus_one] = [#fp_name::zero(); #double_degree_minus_one];
+                for i in 0..M {
+                    res[2 * i] += self.0[i].square();
+
+                    for j in (i + 1)..M {
+                        res[i + j] += (self.0[i] * self.0[j]).double()
+                    }
+                }
+                Self::reduce(&mut res);
+                let mut arr = [#fp_name::default(); #degree];
+                for i in 0..M {
+                    arr[i] = res[i];
+                }
+                #name(arr)
+            }
+
+            fn invert(&self) -> ::gff::derive::subtle::CtOption<Self> {
+                let res = self.powx(PRIME_FIELD_MODULUS().pow(M as u32) - 2u8);
+                ::gff::derive::subtle::CtOption::new(res, !self.is_zero())
+            }
+
+            fn sqrt(&self) -> ::gff::derive::subtle::CtOption<Self> {
+                panic!("Square root is not implemented")
             }
         }
 
